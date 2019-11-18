@@ -5,7 +5,7 @@
 #include <ESP8266mDNS.h>
 
 #include <DNSServer.h>
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include "WiFiManager/WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
 // Go to Tools>Flash Size and select and option with SPIFFS
 #include <FS.h>   // Include the SPIFFS library https://tttapa.github.io/ESP8266/Chap11%20-%20SPIFFS.html

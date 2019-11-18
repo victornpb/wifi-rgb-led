@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ESP8266</title>
+  <meta name="viewport" content="width=320, user-scalable=no, initial-scale=1, maximum-scale=1">
+  <style>
+    html,
+    body {
+      overflow: hidden;
+      -webkit-user-select: auto;
+      user-select: none;
+    }
+
+    * {
+      -webkit-touch-callout: none;
+      -webkit-user-select: auto;
+      user-select: none;
+    }
+    .control{
+      margin-top: 40px;
+      text-align: center;
+    }
+    input[type="range"]{
+      width: 80%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <input type="color" id="colorInput">
+
+  <div class="control">
+    R <input type="number" id="inputRt" min="0" max="255">
+    <br>
+    <input type="range" id="inputR" min="0" max="255">
+  </div>
+  <div class="control">
+    G <input type="number" id="inputGt" min="0" max="255">
+    <br>
+    <input type="range" id="inputG" min="0" max="255">
+  </div>
+  <div class="control">
+    B <input type="number" id="inputBt" min="0" max="255">
+    <br>
+    <input type="range" id="inputB" min="0" max="255">
+  </div>
+
+  <script>
+
+    var HOST = 'http://esp8266.local/';
+
+    var r=0,g=0,b=0;
+
+    colorInput.oninput = function () {
+      setColor(hexToRgb(this.value));
+    };
+
+    inputR.oninput = function () {
+      setColor([this.value,g,b]);
+    };
+    inputRt.oninput = function () {
+      setColor([this.value,g,b]);
+    };
+    inputG.oninput = function () {
+      setColor([r,this.value,b]);
+    };
+    inputGt.oninput = function () {
+      setColor([r,this.value,b]);
+    };
+    inputB.oninput = function () {
+      setColor([r,g,this.value]);
+    };
+    inputBt.oninput = function () {
+      setColor([r,g,this.value]);
+    };
+
+    function setColor(rgb) {
+      r = rgb[0];
+      g = rgb[1];
+      b = rgb[2];
+
+      changeColor(r, g, b);
+      updateUI(r, g, b);
+    }
+
+    function updateUI(r,g,b){
+      var hex = rgbToHex(r,g,b)
+      document.body.style.background = hex;
+      inputR.value=r;
+      inputRt.value=r;
+      inputG.value=g;
+      inputGt.value=g;
+      inputB.value=b;
+      inputBt.value=b;
+      colorInput.value = hex;
+    }
+
+    function throttle(func, limit) {
+      let lastFunc
+      let lastRan
+      return function () {
+        const context = this
+        const args = arguments
+        if (!lastRan) {
+          func.apply(context, args)
+          lastRan = Date.now()
+        } else {
+          clearTimeout(lastFunc)
+          lastFunc = setTimeout(function () {
+            if ((Date.now() - lastRan) >= limit) {
+              func.apply(context, args)
+              lastRan = Date.now()
+            }
+          }, limit - (Date.now() - lastRan))
+        }
+      }
+    }
+
+    var changeColor = throttle(function changeColor(red, green, blue) {
+      //Set RGB LED Color
+      var params = "r=" + red + "&g=" + green + "&b=" + blue;
+      console.log(red, green, blue, params);
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = this.responseText;
+          console.log('Response', params, response);
+        }
+      };
+      xhttp.open("GET", HOST + "setRGB?" + params, true); //Handle readADC server on ESP8266
+      xhttp.send();
+    }, 100);
+
+
+    function getColor() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = this.responseText;
+          console.log('Response', response);
+          var json = JSON.parse(response);
+          
+          r = json.r;
+          g = json.g;
+          b = json.b;
+
+          updateUI(json.r, json.g, json.b);
+        }
+      };
+      xhttp.open("GET", HOST + "getRGB", true); //Handle readADC server on ESP8266
+      xhttp.send();
+    }
+
+    getColor();
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+    function hexToRgb(hex) {
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : null;
+    }
+  </script>
+</body>
+</html>
